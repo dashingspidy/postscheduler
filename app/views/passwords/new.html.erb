@@ -1,0 +1,4 @@
+<section class="card auth-card">
+  <p class="eyebrow">Account recovery</p><h1 class="page-title">Reset your password</h1><p class="page-subtitle">Enter your email and we’ll send reset instructions.</p>
+  <%= form_with url: passwords_path, class: "form-stack section" do |form| %><div class="field"><%= form.label :email_address, "Email address", class: "field-label" %><%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "you@example.com", value: params[:email_address], class: "input" %></div><%= form.submit "Email reset instructions", class: "btn btn-primary" %><% end %>
+</section>

@@ -1,0 +1,23 @@
+<div class="page">
+  <header class="page-header">
+    <div><p class="eyebrow">Project</p><h1 class="page-title"><%= @project.name %></h1><p class="page-subtitle"><%= @project.background_images.count %> reusable background images</p></div>
+    <div class="header-actions"><%= link_to "Upload photos", new_project_photo_path(project_id: @project.id), class: "btn btn-secondary" %><%= link_to "Create slideshow", new_slideshow_import_path(project_id: @project.id), class: "btn btn-primary" %></div>
+  </header>
+
+  <section class="card card-body section">
+    <div><p class="eyebrow">Publishing</p><h2 class="list-title">Zernio accounts</h2></div>
+    <% if @project.zernio_accounts.any? %><div><% @project.zernio_accounts.each do |account| %><div class="account-row"><span><strong><%= account.label %></strong> · <%= account.platform.capitalize %></span><%= button_to "Remove", zernio_account_path(account), method: :delete, class: "btn btn-error btn-outline btn-sm" %></div><% end %></div><% else %><p class="list-meta">No accounts added yet.</p><% end %>
+    <%= form_with url: zernio_accounts_path, class: "form-grid" do |form| %>
+      <%= hidden_field_tag :project_id, @project.id %>
+      <div class="field"><%= form.text_field :label, name: "zernio_account[label]", placeholder: "Account label", class: "input", aria: { label: "Account label" } %></div>
+      <div class="field"><%= form.select :platform, ZernioAccount::PLATFORMS.map { |platform| [platform.capitalize, platform] }, {}, name: "zernio_account[platform]", class: "select", aria: { label: "Platform" } %></div>
+      <div class="field"><%= form.text_field :account_id, name: "zernio_account[account_id]", placeholder: "Zernio account ID", class: "input", aria: { label: "Zernio account ID" } %></div>
+      <%= form.submit "Add account", class: "btn btn-primary" %>
+    <% end %>
+  </section>
+
+  <section class="section">
+    <div><p class="eyebrow">Assets</p><h2 class="list-title">Background images</h2></div>
+    <% if @project.background_images.attached? %><div class="preview-grid section"><% @project.background_images.each do |image| %><%= image_tag image, class: "preview-image" %><% end %></div><% else %><p class="list-meta">No photos yet. Upload photos to use this project for slideshow rendering.</p><% end %>
+  </section>
+</div>

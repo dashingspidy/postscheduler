@@ -1,0 +1,20 @@
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <%= link_to dashboard_path, class: "brand" do %>
+      Post<span class="brand-accent">scheduler</span>
+    <% end %>
+    <span class="sidebar-email"><%= Current.user.email_address %></span>
+  </div>
+
+  <nav class="sidebar-nav" aria-label="Main navigation">
+    <% navigation_items = [["Dashboard", dashboard_path], ["Posts", posts_path], ["Slideshows", slideshow_imports_path], ["Video creation", video_creations_path], ["Photo uploader", new_project_photo_path], ["Projects", projects_path]] %>
+    <% navigation_items.each do |label, path| %>
+      <%= link_to label, path, class: "nav-link #{current_page?(path) ? "nav-link-active" : ""}" %>
+    <% end %>
+  </nav>
+
+  <div class="sidebar-footer">
+    <p class="sidebar-email"><%= Current.user.email_address %></p>
+    <%= button_to "Sign out", session_path, method: :delete, class: "btn btn-error btn-outline btn-sm" %>
+  </div>
+</aside>

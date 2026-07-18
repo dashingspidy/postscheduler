@@ -1,0 +1,11 @@
+<div class="page page-narrow">
+  <header class="page-header">
+    <div><p class="eyebrow">Project assets</p><h1 class="page-title">Upload photos</h1><p class="page-subtitle">Photos belong to one project and are used only when rendering that project’s slideshows.</p></div>
+  </header>
+
+  <%= form_with url: project_photos_path, scope: :project_photo, class: "card bg-base-100 shadow-sm form-card form-stack" do |form| %>
+    <div class="field"><%= form.label :project_id, "Project", class: "field-label" %><%= form.collection_select :project_id, @projects, :id, :name, { prompt: "Choose a project", selected: @selected_project_id }, required: true, class: "select" %><% if @projects.empty? %><p class="field-hint">Create a project first.</p><% end %></div>
+    <div class="field"><%= form.label :photos, "Photos", class: "field-label" %><%= form.file_field :photos, multiple: true, accept: "image/png,image/jpeg", required: true, class: "file-input" %><p class="field-hint">Choose one or many JPG or PNG images. They remain in the selected project’s photo library.</p></div>
+    <div class="form-actions"><%= form.submit "Upload photos", class: "btn btn-primary" %><%= link_to "Cancel", projects_path, class: "btn btn-secondary" %></div>
+  <% end %>
+</div>

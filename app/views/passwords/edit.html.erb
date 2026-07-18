@@ -1,0 +1,4 @@
+<section class="card auth-card">
+  <p class="eyebrow">Account recovery</p><h1 class="page-title">Choose a new password</h1><p class="page-subtitle">Use a secure password you have not used elsewhere.</p>
+  <%= form_with url: password_path(params[:token]), method: :put, class: "form-stack section" do |form| %><div class="field"><%= form.label :password, "New password", class: "field-label" %><%= form.password_field :password, required: true, autocomplete: "new-password", placeholder: "Enter new password", maxlength: 72, class: "input" %></div><div class="field"><%= form.label :password_confirmation, "Confirm password", class: "field-label" %><%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", placeholder: "Repeat new password", maxlength: 72, class: "input" %></div><%= form.submit "Save password", class: "btn btn-primary" %><% end %>
+</section>

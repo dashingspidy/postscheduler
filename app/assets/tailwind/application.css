@@ -1,1 +1,104 @@
 @import "tailwindcss";
+
+@source not "./daisyui{,*}.mjs";
+@plugin "./daisyui.mjs" {
+  themes: lofi --default;
+}
+
+@layer base {
+  body { min-height: 100vh; background: var(--color-base-200); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+  input, textarea, select { font: inherit; }
+}
+
+@layer components {
+  .app-shell { min-height: 100vh; }
+  .app-main { min-width: 0; flex: 1; padding: 1.5rem; }
+  .page { width: 100%; max-width: 72rem; margin: 0 auto; }
+  .page-narrow { max-width: 42rem; }
+  .page-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1.25rem; }
+  .eyebrow { color: var(--color-primary); font-size: .75rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+  .page-title { margin-top: .35rem; font-size: clamp(1.9rem, 4vw, 2.5rem); font-weight: 750; letter-spacing: -.04em; line-height: 1.05; }
+  .page-subtitle { margin-top: .6rem; color: color-mix(in oklab, var(--color-base-content) 65%, transparent); font-size: .98rem; }
+  .header-actions, .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+  .form-grid { display: grid; gap: .75rem; }
+  .post-content { white-space: pre-wrap; }
+
+  .sidebar { display: flex; width: 100%; flex-shrink: 0; flex-direction: column; border-bottom: 1px solid var(--color-base-300); background: color-mix(in oklab, var(--color-base-100) 94%, transparent); backdrop-filter: blur(18px); }
+  .sidebar-brand { display: flex; align-items: center; justify-content: space-between; padding: 1.4rem 1.5rem; }
+  .brand { font-size: 1.15rem; font-weight: 800; letter-spacing: -.04em; }
+  .brand-accent { color: var(--color-primary); }
+  .sidebar-email { max-width: 14rem; overflow: hidden; color: color-mix(in oklab, var(--color-base-content) 55%, transparent); font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
+  .sidebar-nav { display: flex; gap: .25rem; overflow-x: auto; border-top: 1px solid var(--color-base-300); padding: .75rem; }
+  .nav-link { border-radius: .65rem; padding: .7rem .8rem; color: color-mix(in oklab, var(--color-base-content) 62%, transparent); font-size: .875rem; font-weight: 650; white-space: nowrap; transition: .16s ease; }
+  .nav-link:hover { background: var(--color-base-200); color: var(--color-base-content); }
+  .nav-link-active { background: var(--color-base-300); color: var(--color-base-content); }
+  .sidebar-footer { display: none; border-top: 1px solid var(--color-base-300); padding: 1.25rem; }
+
+  .section { margin-top: 2rem; }
+  .empty-state { padding: 3.25rem 1.5rem; color: color-mix(in oklab, var(--color-base-content) 65%, transparent); text-align: center; }
+  .btn-quiet { color: var(--color-primary); font-size: .875rem; font-weight: 700; }
+  .btn-danger { color: var(--color-error); font-size: .875rem; font-weight: 700; }
+  .form-card { margin-top: 2rem; padding: 1.5rem; }
+  .form-stack, .fieldset { display: grid; gap: 1.25rem; }
+  .field { display: grid; gap: .45rem; }
+  .field-label, .fieldset-label { font-size: .875rem; font-weight: 700; }
+  .field-hint, .list-meta { color: color-mix(in oklab, var(--color-base-content) 62%, transparent); font-size: .8rem; line-height: 1.15rem; }
+  .file-input { width: 100%; }
+  .checkbox-row { display: flex; align-items: center; gap: .6rem; font-size: .875rem; }
+  .error-box { margin-top: 1rem; border: 1px solid var(--color-error); border-radius: var(--radius-field); background: var(--color-base-100); padding: .85rem 1rem; color: var(--color-error); font-size: .875rem; font-weight: 600; }
+  .flash-alert, .flash-notice { margin-bottom: 1.25rem; }
+
+  .list { overflow: hidden; }
+  .list-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--color-base-300); padding: 1.1rem 1.25rem; transition: background .16s ease; }
+  .list-row:last-child { border-bottom: 0; }
+  a.list-row:hover { background: var(--color-base-200); }
+  .list-title { font-size: .95rem; font-weight: 750; }
+  .status { display: inline-flex; border-radius: 999px; background: var(--color-base-200); padding: .25rem .55rem; color: color-mix(in oklab, var(--color-base-content) 72%, transparent); font-size: .72rem; font-weight: 750; text-transform: capitalize; }
+  .project-grid { display: grid; gap: 1rem; }
+  .project-card { padding: 1.35rem; transition: border .16s ease, transform .16s ease; }
+  .project-card:hover { border-color: var(--color-base-content); transform: translateY(-2px); }
+  .preview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .preview-image { aspect-ratio: 9 / 16; width: 100%; border-radius: .75rem; object-fit: cover; }
+  .video-preview { width: 100%; max-height: 42rem; border-radius: var(--radius-box); background: #000; }
+  .account-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--color-base-300); padding: .875rem 0; }
+  .account-row:last-child { border-bottom: 0; }
+
+  .pipeline { display: grid; gap: 1rem; padding: 1.5rem; }
+  .pipeline-progress { width: 100%; }
+  .pipeline-stages { display: grid; gap: .75rem; }
+  .pipeline-stage { position: relative; display: grid; grid-template-columns: 2rem 1fr; align-items: center; gap: .75rem; min-height: 3.5rem; }
+  .pipeline-stage:not(:last-child)::after { position: absolute; top: 2.8rem; left: .95rem; width: 1px; height: 1.35rem; background: var(--color-base-300); content: ""; }
+  .pipeline-marker { display: grid; width: 2rem; height: 2rem; place-items: center; border: 1px solid var(--color-base-300); border-radius: 999px; background: var(--color-base-100); color: color-mix(in oklab, var(--color-base-content) 50%, transparent); font-size: .75rem; font-weight: 800; }
+  .pipeline-stage-complete .pipeline-marker { border-color: var(--color-base-content); background: var(--color-base-content); color: var(--color-base-100); }
+  .pipeline-stage-active .pipeline-marker { border-color: var(--color-base-content); animation: pipeline-pulse 1.2s ease-in-out infinite; }
+  .pipeline-stage-failed .pipeline-marker { border-color: var(--color-error); color: var(--color-error); }
+  .pipeline-stage-title { font-size: .875rem; font-weight: 750; }
+  .pipeline-stage-copy { margin-top: .1rem; color: color-mix(in oklab, var(--color-base-content) 60%, transparent); font-size: .75rem; }
+  .row-pipeline { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .row-stage { display: inline-flex; align-items: center; gap: .35rem; border: 1px solid var(--color-base-300); border-radius: 999px; padding: .35rem .55rem; color: color-mix(in oklab, var(--color-base-content) 55%, transparent); font-size: .72rem; font-weight: 700; }
+  .row-stage-complete { border-color: var(--color-base-content); color: var(--color-base-content); }
+  .row-stage-active { border-color: var(--color-base-content); animation: pipeline-pulse 1.2s ease-in-out infinite; }
+  .row-stage-failed { border-color: var(--color-error); color: var(--color-error); }
+  .item-grid { display: grid; gap: 1rem; }
+
+  @keyframes pipeline-pulse { 50% { opacity: .45; } }
+
+  .calendar { margin-top: 2rem; overflow: hidden; }
+  .calendar-toolbar { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--color-base-300); padding: 1rem 1.25rem; }
+  .calendar-month { font-size: 1rem; font-weight: 750; }
+  .calendar-button { display: grid; height: 2.1rem; width: 2.1rem; place-items: center; border-radius: .55rem; color: color-mix(in oklab, var(--color-base-content) 65%, transparent); font-weight: 700; }
+  .calendar-button:hover { background: var(--color-base-200); color: var(--color-base-content); }
+  .calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .calendar-weekdays { border-bottom: 1px solid var(--color-base-300); background: var(--color-base-200); color: color-mix(in oklab, var(--color-base-content) 50%, transparent); font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+  .calendar-weekdays > div { padding: .75rem .25rem; }
+  .calendar-day { min-height: 6.75rem; border-right: 1px solid var(--color-base-300); border-bottom: 1px solid var(--color-base-300); padding: .55rem; }
+  .calendar-day-muted { background: var(--color-base-200); color: color-mix(in oklab, var(--color-base-content) 40%, transparent); }
+  .calendar-date { margin-bottom: .45rem; font-size: .78rem; font-weight: 750; }
+  .calendar-event { display: block; overflow: hidden; margin-bottom: .3rem; border-radius: .45rem; background: var(--color-base-300); padding: .3rem .4rem; color: var(--color-base-content); font-size: .68rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+
+  .auth-main { display: flex; min-height: 100vh; align-items: center; justify-content: center; padding: 1.5rem; }
+  .auth-card { width: 100%; max-width: 28rem; padding: 2rem; }
+
+  @media (min-width: 768px) { .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .preview-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } .form-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .pipeline-stages { grid-template-columns: repeat(4, minmax(0, 1fr)); } .pipeline-stage { grid-template-columns: 1fr; text-align: center; } .pipeline-marker { margin: 0 auto; } .pipeline-stage:not(:last-child)::after { top: 1rem; left: calc(50% + 1rem); width: calc(100% - 2rem); height: 1px; } }
+  @media (min-width: 1024px) { .app-shell { display: flex; } .app-main { padding: 3rem; } .sidebar { width: 17rem; min-height: 100vh; border-right: 1px solid var(--color-base-300); border-bottom: 0; } .sidebar-brand { display: block; padding: 2rem 1.5rem 1.5rem; } .sidebar-email { display: none; } .sidebar-nav { flex-direction: column; overflow: visible; border-top: 0; padding: .5rem .85rem; } .sidebar-footer { display: block; margin-top: auto; } .calendar-day { min-height: 8.5rem; padding: .65rem; } .calendar-event { font-size: .72rem; } }
+}

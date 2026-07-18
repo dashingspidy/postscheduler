@@ -1,0 +1,41 @@
+<% content_for :title, "Dashboard | Postscheduler" %>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">Content command center</p>
+      <h1 class="page-title">Publishing calendar</h1>
+      <p class="page-subtitle">Plan posts for Facebook, TikTok, and YouTube.</p>
+    </div>
+    <div class="header-actions">
+      <%= link_to "View all posts", posts_path, class: "btn-quiet" %>
+      <%= link_to "New post", new_post_path, class: "btn btn-primary" %>
+    </div>
+  </div>
+
+  <section class="card calendar">
+    <div class="calendar-toolbar">
+      <%= link_to "←", dashboard_path(month: @month.prev_month.strftime("%Y-%m")), class: "calendar-button", aria: { label: "Previous month" } %>
+      <h2 class="calendar-month"><%= @month.strftime("%B %Y") %></h2>
+      <%= link_to "→", dashboard_path(month: @month.next_month.strftime("%Y-%m")), class: "calendar-button", aria: { label: "Next month" } %>
+    </div>
+
+    <div class="calendar-weekdays">
+      <% Date::ABBR_DAYNAMES.each do |day| %><div class="py-3"><%= day %></div><% end %>
+    </div>
+    <div class="calendar-grid">
+      <% calendar_start = @month.beginning_of_month.beginning_of_week(:sunday) %>
+      <% calendar_end = @month.end_of_month.end_of_week(:sunday) %>
+      <% (calendar_start..calendar_end).each do |date| %>
+        <div class="calendar-day <%= "calendar-day-muted" unless date.month == @month.month %>">
+          <div class="calendar-date"><%= date.day %></div>
+          <% @posts_by_date.fetch(date, []).each do |post| %>
+            <%= link_to post_path(post), class: "calendar-event", title: post.title.presence || post.content do %>
+              <%= post.scheduled_at.strftime("%H:%M") %> <%= post.title.presence || post.content %>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+</div>

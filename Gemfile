@@ -10,6 +10,7 @@ gem "turbo-rails"
 gem "stimulus-rails"
 gem "tailwindcss-rails"
 gem "jbuilder"
+gem "csv"
 
 gem "bcrypt", "~> 3.1.7"
 
@@ -34,3 +35,5 @@ end
 group :development do
   gem "web-console"
 end
+
+gem "zernio-sdk", github: "zernio-dev/zernio-ruby"

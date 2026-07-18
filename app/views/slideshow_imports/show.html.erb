@@ -1,0 +1,35 @@
+<% import = @slideshow_import %>
+<% progress = import.total_rows.positive? ? ((import.completed_rows + import.failed_rows) * 100 / import.total_rows) : 0 %>
+<% if import.processing? %><meta http-equiv="refresh" content="4"><% end %>
+
+<div class="page">
+  <header class="page-header">
+    <div><p class="eyebrow">Slideshow</p><h1 class="page-title"><%= import.project.name %></h1><p class="page-subtitle"><%= import.status.capitalize %> · <%= import.completed_rows %>/<%= import.total_rows %> rendered<%= " · refreshes automatically" if import.processing? %></p><p class="field-hint">Five per day at 9:00 AM (Europe/Brussels) · <%= import.tiktok_draft? ? "TikTok Creator Inbox drafts" : "direct auto publish" %></p></div>
+    <div class="header-actions"><% if import.pending? || import.failed? %><%= button_to "Start creating slideshows", start_slideshow_import_path(import), method: :post, class: "btn btn-primary" %><% end %><%= link_to "New slideshow", new_slideshow_import_path, class: "btn btn-secondary" %></div>
+  </header>
+
+  <section class="card bg-base-100 shadow-sm pipeline section">
+    <progress class="progress pipeline-progress" value="<%= progress %>" max="100"><%= progress %>%</progress>
+    <div class="pipeline-stages">
+      <div class="pipeline-stage pipeline-stage-complete"><span class="pipeline-marker">1</span><div><p class="pipeline-stage-title">CSV uploaded</p><p class="pipeline-stage-copy">Content file saved</p></div></div>
+      <div class="pipeline-stage <%= import.slideshow_items.any? ? "pipeline-stage-complete" : (import.processing? ? "pipeline-stage-active" : "") %>"><span class="pipeline-marker">2</span><div><p class="pipeline-stage-title">Rows parsed</p><p class="pipeline-stage-copy"><%= import.slideshow_items.any? ? "#{import.slideshow_items.count} rows queued" : "Waiting to start" %></p></div></div>
+      <div class="pipeline-stage <%= import.failed? ? "pipeline-stage-failed" : (import.processing? ? "pipeline-stage-active" : (import.completed? ? "pipeline-stage-complete" : "")) %>"><span class="pipeline-marker">3</span><div><p class="pipeline-stage-title">Slides rendered</p><p class="pipeline-stage-copy"><%= import.completed_rows %> ready<%= ", #{import.failed_rows} failed" if import.failed_rows.positive? %></p></div></div>
+      <div class="pipeline-stage <%= import.completed? ? "pipeline-stage-complete" : "" %>"><span class="pipeline-marker">4</span><div><p class="pipeline-stage-title">Posts ready</p><p class="pipeline-stage-copy"><%= import.completed? ? "Review generated content" : "Finishes after rendering" %></p></div></div>
+    </div>
+  </section>
+
+  <% if import.error_message.present? %><p class="alert alert-error section"><%= import.error_message %></p><% end %>
+
+  <% if import.slideshow_items.any? %>
+    <section class="section"><p class="eyebrow">Generated content</p><h2 class="page-title">Row-by-row progress</h2><div class="item-grid"><% import.slideshow_items.order(:position).each do |item| %>
+      <section class="card card-body bg-base-100 shadow-sm">
+        <div class="account-row"><div><h3 class="list-title"><%= item.data["day"] %> — <%= item.data["title"].presence || "Untitled slideshow" %></h3><p class="list-meta"><%= item.data.fetch("slides", []).size %> slides</p></div><span class="status"><%= item.status %></span></div>
+        <div class="row-pipeline section"><span class="row-stage row-stage-complete">✓ Row parsed</span><span class="row-stage <%= item.ready? ? "row-stage-complete" : (item.rendering? ? "row-stage-active" : (item.failed? ? "row-stage-failed" : "") ) %>"><%= item.failed? ? "×" : (item.ready? ? "✓" : "•") %> Slides rendered</span><span class="row-stage <%= item.post ? "row-stage-complete" : "" %>"><%= item.post ? "✓" : "•" %> Post created</span></div>
+        <% if item.post&.slides&.attached? %><div class="preview-grid section"><% item.post.slides.each do |slide| %><%= image_tag slide, class: "preview-image" %><% end %></div><div class="form-actions section"><%= link_to "Review generated post", item.post, class: "btn btn-secondary" %></div><% end %>
+        <% if item.error_message.present? %><p class="alert alert-error section"><strong>Couldn’t render this row:</strong> <%= item.error_message %></p><% end %>
+      </section>
+    <% end %></div></section>
+  <% elsif import.pending? %>
+    <div class="card empty-state section"><h2 class="list-title">Ready to create slideshows</h2><p class="list-meta">Start the import when you are ready. The visual pipeline and generated previews will appear here.</p></div>
+  <% end %>
+</div>

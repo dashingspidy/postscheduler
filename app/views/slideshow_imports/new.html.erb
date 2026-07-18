@@ -1,0 +1,12 @@
+<div class="page page-narrow">
+  <p class="eyebrow">Bulk creation</p><h1 class="page-title">Create slideshow</h1>
+  <p class="page-subtitle">Select a project and CSV. Slideshows are delivered in batches of five per day at 9:00 AM.</p>
+
+  <%= form_with model: @slideshow_import, class: "card bg-base-100 shadow-sm form-card form-stack" do |form| %>
+    <% if @slideshow_import.errors.any? %><div class="alert alert-error"><%= @slideshow_import.errors.full_messages.to_sentence %></div><% end %>
+    <div class="field"><%= form.label :project_id, class: "field-label" %><%= form.collection_select :project_id, @projects, :id, :name, { prompt: "Choose a project" }, required: true, class: "select" %><p class="field-hint">The import uses photos already uploaded to this project. <%= link_to "Upload photos", new_project_photo_path, class: "link" %></p></div>
+    <div class="field"><%= form.label :csv_file, "Content CSV", class: "field-label" %><%= form.file_field :csv_file, accept: ".csv,text/csv", required: true, class: "file-input" %><p class="field-hint">Uses Day, Title, Caption/Keywords/Hashtags, optional Tactic, and Slide1…SlideN columns.</p></div>
+    <div class="field"><%= form.label :delivery_mode, "Delivery mode", class: "field-label" %><%= form.select :delivery_mode, [["TikTok draft — Creator Inbox, publish manually", "tiktok_draft"], ["Auto publish — post directly at delivery time", "auto_publish"]], {}, class: "select" %><p class="field-hint">TikTok draft is the default warm-up mode. Five rendered slideshows are delivered each day at 9:00 AM.</p></div>
+    <div class="form-actions"><%= form.submit "Create slideshow", class: "btn btn-primary" %><%= link_to "Cancel", dashboard_path, class: "btn btn-secondary" %></div>
+  <% end %>
+</div>

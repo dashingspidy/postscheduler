@@ -24,8 +24,19 @@
   </head>
 
   <body>
-    <main class="container mx-auto mt-28 px-5 flex">
-      <%= yield %>
-    </main>
+    <% if authenticated? %>
+      <div class="app-shell">
+        <%= render "layouts/sidebar" %>
+        <main class="app-main">
+          <% if notice %><p class="alert alert-success mb-5"><%= notice %></p><% end %>
+          <% if alert %><p class="alert alert-error mb-5"><%= alert %></p><% end %>
+          <%= yield %>
+        </main>
+      </div>
+    <% else %>
+      <main class="auth-main">
+        <%= yield %>
+      </main>
+    <% end %>
   </body>
 </html>

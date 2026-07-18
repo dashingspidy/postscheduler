@@ -1,0 +1,15 @@
+<div class="page">
+  <header class="page-header">
+    <div><p class="eyebrow">Publishing</p><h1 class="page-title">Posts</h1><p class="page-subtitle">Review drafts and scheduled content in one place.</p></div>
+    <div class="header-actions"><%= link_to "New post", new_post_path, class: "btn btn-primary" %></div>
+  </header>
+  <% if @posts.any? %>
+    <div class="card list section">
+      <% @posts.each do |post| %>
+        <%= link_to post, class: "list-row" do %><div><h2 class="list-title"><%= post.title.presence || post.content.truncate(80) %></h2><p class="list-meta"><%= post.status.capitalize %><%= " · #{l(post.scheduled_at, format: :short)}" if post.scheduled_at %></p></div><span class="btn btn-quiet">View</span><% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="card empty-state section"><h2 class="list-title">No posts yet</h2><p class="list-meta">Create a draft or schedule your first post.</p><br><%= link_to "New post", new_post_path, class: "btn btn-primary" %></div>
+  <% end %>
+</div>
