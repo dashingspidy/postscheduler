@@ -1,9 +1,7 @@
-require "mini_magick"
-
 module TikTok
   class RenderSlideshowJob < ApplicationJob
     queue_as :default
-    retry_on MiniMagick::Error, wait: :polynomially_longer, attempts: 3
+    retry_on SlideshowRenderer::Error, wait: :polynomially_longer, attempts: 3
 
     def perform(item)
       return if item.ready?

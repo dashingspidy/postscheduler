@@ -20,9 +20,12 @@ RUN apt-get update -qq && \
       curl \
       ffmpeg \
       fonts-dejavu-core \
+      fonts-noto-color-emoji \
       imagemagick \
       libjemalloc2 \
       libvips \
+      python3 \
+      python3-venv \
       sqlite3 && \
     ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
@@ -32,7 +35,8 @@ ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+    LD_PRELOAD="/usr/local/lib/libjemalloc.so" \
+    PILLOW_PYTHON="/opt/pillow/bin/python"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
@@ -45,6 +49,10 @@ RUN apt-get update -qq && \
 # Install application gems
 COPY vendor/* ./vendor/
 COPY Gemfile Gemfile.lock ./
+COPY python/requirements.txt python/requirements.txt
+
+RUN python3 -m venv /opt/pillow && \
+    /opt/pillow/bin/pip install --no-cache-dir -r python/requirements.txt
 
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
@@ -76,6 +84,7 @@ USER 1000:1000
 
 # Copy built artifacts: gems, application
 COPY --chown=rails:rails --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
+COPY --from=build /opt/pillow /opt/pillow
 COPY --chown=rails:rails --from=build /rails /rails
 
 # Entrypoint prepares the database.

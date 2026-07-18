@@ -30,7 +30,15 @@ Create an Education, Muslim, or other **Project** first. Each project has its ow
 
 Each CSV row creates a slideshow from `Slide1` through `SlideN`. Supported optional fields are `Day`, `Tactic`, `Title`, `Caption`, `Keywords`, `Hashtags`, and `scheduled_at`. A row with `scheduled_at` is sent to Zernio after rendering; rows without it remain drafts for review.
 
-Image rendering requires ImageMagick to be installed on every environment that processes jobs. Slides use the default font available to ImageMagick.
+Slideshow rendering uses the bundled Python/Pillow renderer. Rails keeps ownership of jobs, progress, storage, scheduling, and publishing; Pillow only creates the slide JPG files. Production Docker builds install Pillow plus DejaVu and Noto Color Emoji fonts for consistent rendering.
+
+For local development, install Pillow and point Rails at that Python executable:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r python/requirements.txt
+PILLOW_PYTHON="$PWD/.venv/bin/python" bin/dev
+```
 
 `Video::EndCardConcatenator` appends a two-second project-branded end card to a supplied MP4. It requires FFmpeg with the `drawtext` filter enabled and a project app icon.
 
