@@ -21,6 +21,6 @@ Rails.application.routes.draw do
     post :start, on: :member
   end
   root to: "dashboard#index"
-  get "sign_up", to: "registration#new"
+  # get "sign_up", to: "registration#new"
   post "registration", to: "registration#create"
 end
