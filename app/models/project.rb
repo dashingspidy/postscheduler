@@ -1,10 +1,14 @@
 class Project < ApplicationRecord
   DEFAULT_STYLE = {
-    "text_color" => "white",
-    "stroke_color" => "black",
+    "text_color" => "black",
+    "stroke_color" => "white",
     "font_size" => 58,
     "tactic_font_size" => 38,
-    "tactic_top_margin" => 240
+    "tactic_top_margin" => 240,
+    "caption_background_color" => "white",
+    "caption_background_padding_x" => 28,
+    "caption_background_padding_y" => 16,
+    "caption_background_radius" => 18
   }.freeze
 
   belongs_to :user

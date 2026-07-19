@@ -113,15 +113,15 @@ def draw_caption(image, text, y, style, background=False):
             draw.rounded_rectangle(
                 (x - padding_x, y - padding_y, x + width + padding_x, y + height + padding_y),
                 radius=radius,
-                fill=style.get("caption_background_color", "#000000"),
+                fill=style.get("caption_background_color", "white"),
             )
         cursor_x = x
         for run, font, emoji, box, run_width, run_height in runs:
             draw_y = y + (height - run_height) / 2 - box[1]
             draw.text(
                 (cursor_x - box[0], draw_y), run, font=font,
-                fill=style.get("text_color", "white"),
-                stroke_width=0 if emoji else stroke, stroke_fill=style.get("stroke_color", "black"), embedded_color=emoji,
+                fill=style.get("text_color", "black"),
+                stroke_width=0 if emoji else stroke, stroke_fill=style.get("stroke_color", "white"), embedded_color=emoji,
             )
             cursor_x += run_width
         y += height + spacing
@@ -155,7 +155,7 @@ def render(payload):
             draw_caption(image, payload["tactic"], int(style.get("tactic_top_margin", 240)), tactic_style, background=True)
         draw = ImageDraw.Draw(image)
         _, height = fit_text(draw, text, style)
-        draw_caption(image, text, (HEIGHT - height) / 2 + int(style.get("text_vertical_offset", 0)), style)
+        draw_caption(image, text, (HEIGHT - height) / 2 + int(style.get("text_vertical_offset", 0)), style, background=True)
         output = output_directory / f"slide_{index + 1}.jpg"
         image.convert("RGB").save(output, quality=95)
         outputs.append(str(output))
