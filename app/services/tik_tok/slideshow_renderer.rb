@@ -47,7 +47,7 @@ module TikTok
       def render_into(directory)
         payload = {
           slides:,
-          tactic: data["tactic"],
+          top_label: data["title"],
           style:,
           background_images: local_backgrounds(directory),
           background_offset: @item.position * slides.length,

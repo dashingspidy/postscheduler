@@ -1,11 +1,11 @@
 <% import = @slideshow_import %>
 <% progress = import.total_rows.positive? ? ((import.completed_rows + import.failed_rows) * 100 / import.total_rows) : 0 %>
-<% if import.processing? %><meta http-equiv="refresh" content="4"><% end %>
+<% if import.processing? && (import.completed_rows + import.failed_rows < import.total_rows) %><meta http-equiv="refresh" content="4"><% end %>
 
 <div class="page">
   <header class="page-header">
     <div><p class="eyebrow">Slideshow</p><h1 class="page-title"><%= import.project.name %></h1><p class="page-subtitle"><%= import.status.capitalize %> · <%= import.completed_rows %>/<%= import.total_rows %> rendered<%= " · refreshes automatically" if import.processing? %></p><p class="field-hint">Five per day at 9:00 AM (Europe/Brussels) · <%= import.tiktok_draft? ? "TikTok Creator Inbox drafts" : "direct auto publish" %></p></div>
-    <div class="header-actions"><% if import.pending? || import.failed? %><%= button_to "Start creating slideshows", start_slideshow_import_path(import), method: :post, class: "btn btn-primary" %><% end %><%= link_to "New slideshow", new_slideshow_import_path, class: "btn btn-secondary" %></div>
+    <div class="header-actions"><% if import.pending? || import.failed? %><%= button_to "Generate images", start_slideshow_import_path(import), method: :post, class: "btn btn-primary" %><% end %><%= link_to "New slideshow", new_slideshow_import_path, class: "btn btn-secondary" %><%= button_to "Delete slideshow", slideshow_import_path(import), method: :delete, class: "btn btn-error btn-outline", form: { data: { turbo_confirm: "Delete this slideshow and its generated images?" } } %></div>
   </header>
 
   <section class="card bg-base-100 shadow-sm pipeline section">

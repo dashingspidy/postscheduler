@@ -28,7 +28,7 @@ Things you may want to cover:
 
 Create an Education, Muslim, or other **Project** first. Each project has its own connected Zernio TikTok account, reusable JPG/PNG background-image library, and rendering style. Then open **Import slideshows**, choose the project, and upload a CSV. Extra background images are optional and apply only to that import.
 
-Each CSV row creates a slideshow from `Slide1` through `SlideN`. Supported optional fields are `Day`, `Tactic`, `Title`, `Caption`, `Keywords`, `Hashtags`, and `scheduled_at`. A row with `scheduled_at` is sent to Zernio after rendering; rows without it remain drafts for review.
+Each CSV row creates a slideshow from `Slide1` through `SlideN`. Supported optional fields are `Day`, `Tactic`, `Title`, `Caption`, `Keywords`, `Hashtags`, and `scheduled_at`. `Title` is displayed at the top of the first slide. A row with `scheduled_at` is sent to Zernio after rendering; rows without it remain drafts for review.
 
 Slideshow rendering uses the bundled Python/Pillow renderer. Rails keeps ownership of jobs, progress, storage, scheduling, and publishing; Pillow only creates the slide JPG files. Production Docker builds install Pillow plus DejaVu and Noto Color Emoji fonts for consistent rendering.
 

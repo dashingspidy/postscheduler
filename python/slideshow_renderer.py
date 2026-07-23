@@ -12,6 +12,7 @@ HEIGHT = 1920
 FONT_CANDIDATES = (
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
     "/System/Library/Fonts/SFCompactRounded.ttf",
 )
 EMOJI_FONT_CANDIDATES = (
@@ -19,6 +20,22 @@ EMOJI_FONT_CANDIDATES = (
     "/System/Library/Fonts/Apple Color Emoji.ttc",
 )
 EMOJI_FONT_SIZES = (32, 40, 48, 52, 64, 96, 160)
+
+
+def integer_style_value(style, key, default):
+    """Return a usable integer when an optional HTML form value is blank."""
+    value = style.get(key)
+    if value is None or str(value).strip() == "":
+        return default
+    return int(value)
+
+
+def color_style_value(style, key, default):
+    """Return a valid fallback when an optional color field is blank."""
+    value = style.get(key)
+    if value is None or not str(value).strip():
+        return default
+    return value
 
 
 def font_path(candidates):
@@ -60,7 +77,13 @@ def line_metrics(draw, line, size, stroke_width):
     for text, font, emoji in runs:
         box = draw.textbbox((0, 0), text, font=font, stroke_width=0 if emoji else stroke_width, embedded_color=emoji)
         measured.append((text, font, emoji, box, box[2] - box[0], box[3] - box[1]))
-    return measured, sum(run[4] for run in measured), max((run[5] for run in measured), default=0)
+    # Glyph bounding boxes omit ascender/descender space, which makes adjacent
+    # caption lines look as though they overlap. Reserve a full typographic line
+    # box instead.
+    line_height = max((run[5] for run in measured), default=0)
+    if measured:
+        line_height = max(line_height, round(size * 1.2))
+    return measured, sum(run[4] for run in measured), line_height
 
 
 def wrap_text(draw, text, size, max_width, stroke_width):
@@ -83,10 +106,10 @@ def wrap_text(draw, text, size, max_width, stroke_width):
 
 def fit_text(draw, text, style):
     max_width = int(WIDTH * float(style.get("text_max_width_ratio", 0.86)))
-    maximum = int(style.get("font_size", 58))
-    minimum = int(style.get("min_font_size", 38))
-    spacing = int(style.get("line_spacing", 8))
-    stroke = int(style.get("stroke_width", 3))
+    maximum = integer_style_value(style, "font_size", 58)
+    minimum = integer_style_value(style, "min_font_size", 38)
+    spacing = integer_style_value(style, "line_spacing", 8)
+    stroke = integer_style_value(style, "stroke_width", 3)
     for size in range(maximum, minimum - 1, -4):
         lines = wrap_text(draw, text, size, max_width, stroke)
         metrics = [line_metrics(draw, line, size, stroke) for line in lines]
@@ -101,27 +124,25 @@ def fit_text(draw, text, style):
 def draw_caption(image, text, y, style, background=False):
     draw = ImageDraw.Draw(image)
     metrics, total_height = fit_text(draw, text, style)
-    spacing = int(style.get("line_spacing", 8))
-    stroke = int(style.get("stroke_width", 3))
-    padding_x = int(style.get("caption_background_padding_x", 28))
-    padding_y = int(style.get("caption_background_padding_y", 16))
-    radius = int(style.get("caption_background_radius", 18))
+    spacing = integer_style_value(style, "line_spacing", 8)
+    stroke = integer_style_value(style, "stroke_width", 3)
+    padding_x = integer_style_value(style, "caption_background_padding_x", 28)
+    padding_y = integer_style_value(style, "caption_background_padding_y", 16)
 
     for runs, width, height in metrics:
         x = (WIDTH - width) / 2
         if background:
-            draw.rounded_rectangle(
+            draw.rectangle(
                 (x - padding_x, y - padding_y, x + width + padding_x, y + height + padding_y),
-                radius=radius,
-                fill=style.get("caption_background_color", "white"),
+                fill=color_style_value(style, "caption_background_color", "white"),
             )
         cursor_x = x
         for run, font, emoji, box, run_width, run_height in runs:
             draw_y = y + (height - run_height) / 2 - box[1]
             draw.text(
                 (cursor_x - box[0], draw_y), run, font=font,
-                fill=style.get("text_color", "black"),
-                stroke_width=0 if emoji else stroke, stroke_fill=style.get("stroke_color", "white"), embedded_color=emoji,
+                fill=color_style_value(style, "text_color", "black"),
+                stroke_width=0 if emoji else stroke, stroke_fill=color_style_value(style, "stroke_color", "white"), embedded_color=emoji,
             )
             cursor_x += run_width
         y += height + spacing
@@ -150,12 +171,12 @@ def render(payload):
     background_offset = int(payload.get("background_offset", 0))
     for index, text in enumerate(slides):
         image = crop_to_portrait(backgrounds[(background_offset + index) % len(backgrounds)])
-        if index == 0 and payload.get("tactic"):
+        if index == 0 and payload.get("top_label"):
             tactic_style = style | {"font_size": style.get("tactic_font_size", 38), "min_font_size": 24, "stroke_width": 0}
-            draw_caption(image, payload["tactic"], int(style.get("tactic_top_margin", 240)), tactic_style, background=True)
+            draw_caption(image, payload["top_label"], integer_style_value(style, "tactic_top_margin", 240), tactic_style, background=True)
         draw = ImageDraw.Draw(image)
         _, height = fit_text(draw, text, style)
-        draw_caption(image, text, (HEIGHT - height) / 2 + int(style.get("text_vertical_offset", 0)), style, background=True)
+        draw_caption(image, text, (HEIGHT - height) / 2 + integer_style_value(style, "text_vertical_offset", 0), style, background=True)
         output = output_directory / f"slide_{index + 1}.jpg"
         image.convert("RGB").save(output, quality=95)
         outputs.append(str(output))

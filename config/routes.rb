@@ -17,7 +17,7 @@ Rails.application.routes.draw do
   resources :projects
   resources :project_photos, only: %i[new create]
   resources :zernio_accounts, only: %i[create destroy]
-  resources :slideshows, controller: "slideshow_imports", as: :slideshow_imports, only: %i[index new create show] do
+  resources :slideshows, controller: "slideshow_imports", as: :slideshow_imports, only: %i[index new create show destroy] do
     post :start, on: :member
   end
   root to: "dashboard#index"
