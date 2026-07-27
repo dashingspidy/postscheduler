@@ -1,0 +1,19 @@
+<div class="page page-narrow">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Account content profile</p>
+      <h1 class="page-title"><%= @zernio_account.label %></h1>
+      <p class="page-subtitle">This profile controls only this account’s daily slideshow drafts.</p>
+    </div>
+  </header>
+
+  <%= form_with model: @zernio_account, class: "card bg-base-100 shadow-sm form-card form-stack" do |form| %>
+    <% if @zernio_account.errors.any? %><div role="alert" class="alert alert-error alert-soft"><%= @zernio_account.errors.full_messages.to_sentence %></div><% end %>
+    <div role="alert" class="alert alert-info alert-soft text-sm"><strong><%= @zernio_account.label %></strong> receives its own content. It does not share topics or drafts with other accounts in this project.</div>
+    <label class="checkbox-row"><%= form.check_box :factory_enabled %><span>Enable daily drafts for this account</span></label>
+    <div class="field"><%= form.label :factory_posts_per_day, "Drafts per day", class: "field-label" %><%= form.number_field :factory_posts_per_day, min: 1, max: 20, class: "input" %><p class="field-hint">Drafts are submitted to TikTok in batches of two, one hour apart, starting at the project’s daily post time.</p></div>
+    <div class="field"><%= form.label :content_strategy, "Account content strategy", class: "field-label" %><%= form.text_area :content_strategy, rows: 6, class: "textarea", placeholder: "Audience, tone, language, rules, and topics to avoid for this account." %><p class="field-hint">This can differ completely from the project’s other accounts.</p></div>
+    <div class="field"><%= form.label :content_pillars_text, "Content pillars and mix", class: "field-label" %><%= form.text_area :content_pillars_text, value: @zernio_account.content_pillars_text, rows: 6, class: "textarea", placeholder: "One pillar per line, using a weight after |" %></div>
+    <div class="form-actions"><%= form.submit "Save account profile", class: "btn btn-primary" %><%= link_to "Back to project", @zernio_account.project, class: "btn" %></div>
+  <% end %>
+</div>

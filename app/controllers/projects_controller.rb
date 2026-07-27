@@ -1,11 +1,17 @@
 class ProjectsController < ApplicationController
-  before_action :set_project, only: %i[show edit update destroy]
+  before_action :set_project, only: %i[show edit update destroy create_factory_slideshow]
 
   def index
-    @projects = Current.user.projects.order(:name)
+    @projects = Current.user.projects.includes(:zernio_accounts, background_images_attachments: :blob).order(:name)
   end
 
-  def show; end
+  def show
+    @account_providers = @project.zernio_accounts.distinct.order(:provider).pluck(:provider)
+    @selected_account_provider = params[:provider].presence
+    @connected_accounts = @project.zernio_accounts.order(:label)
+    @connected_accounts = @connected_accounts.where(provider: @selected_account_provider) if @selected_account_provider.in?(@account_providers)
+    @available_provider_accounts = available_provider_accounts
+  end
   before_action :load_provider_accounts, only: %i[new create]
 
   def new
@@ -64,11 +70,24 @@ class ProjectsController < ApplicationController
     redirect_to projects_path, notice: "Project deleted.", status: :see_other
   end
 
+  def create_factory_slideshow
+    slideshows = @project.zernio_accounts.active.tiktok.where(provider: @project.publishing_provider).filter_map do |account|
+      next unless account.factory_configured?
+
+      account.factory_posts_per_day.times.map do |index|
+        ContentFactory::SlideshowCreator.new(@project, zernio_account: account, factory_slot: index + 1).call
+      end
+    end.flatten
+    redirect_to slideshows_path, notice: "#{slideshows.size} account-specific slideshow drafts are being created."
+  rescue ContentFactory::SlideshowCreator::Error, ActiveRecord::RecordInvalid => error
+    redirect_to @project, alert: error.message
+  end
+
   private
     def set_project = @project = Current.user.projects.find(params[:id])
 
     def project_params
-      params.expect(project: [ :name, :app_icon, :publishing_provider, { style: %i[text_color stroke_color font_size tactic_font_size tactic_top_margin] } ])
+      params.expect(project: [ :name, :app_icon, :end_slide_branding, :publishing_provider, :time_zone, :factory_enabled, :factory_time, :default_slide_count, { style: %i[text_color stroke_color font_size tactic_font_size tactic_top_margin] } ])
     end
 
     def load_provider_accounts
@@ -79,5 +98,17 @@ class ProjectsController < ApplicationController
         Rails.logger.warn("Unable to load #{provider} accounts: #{error.message}")
         [ provider, [] ]
       end
+    end
+
+    def available_provider_accounts
+      provider = @project.publishing_provider
+      connected_ids = @project.zernio_accounts.where(provider:).pluck(:account_id)
+      Publishing::Registry.fetch(provider).list_accounts.select do |account|
+        ZernioAccount::PLATFORMS.include?(account.platform) && !connected_ids.include?(account._id)
+      end
+    rescue StandardError => error
+      Rails.logger.warn("Unable to load #{provider} accounts: #{error.message}")
+      @available_provider_accounts_error = "We couldn't load available accounts from #{provider.humanize}."
+      []
     end
 end

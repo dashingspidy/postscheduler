@@ -1,20 +1,22 @@
-<aside class="sidebar">
-  <div class="sidebar-brand">
-    <%= link_to dashboard_path, class: "brand" do %>
+<aside class="sidebar bg-base-100">
+  <div class="sidebar-brand border-base-300">
+    <%= link_to dashboard_path, class: "brand text-base-content" do %>
       Post<span class="brand-accent">scheduler</span>
     <% end %>
     <span class="sidebar-email"><%= Current.user.email_address %></span>
   </div>
 
   <nav class="sidebar-nav" aria-label="Main navigation">
-    <% navigation_items = [["Dashboard", dashboard_path], ["Posts", posts_path], ["Slideshows", slideshow_imports_path], ["Video creation", video_creations_path], ["Photo uploader", new_project_photo_path], ["Projects", projects_path]] %>
+    <ul class="menu menu-horizontal lg:menu-vertical w-full gap-1 px-2 lg:px-3">
+    <% navigation_items = [["Dashboard", dashboard_path], ["Posts", posts_path], ["Slideshows", slideshows_path], ["Video creation", video_creations_path], ["Photo uploader", new_project_photo_path], ["Projects", projects_path]] %>
     <% navigation_items.each do |label, path| %>
-      <%= link_to label, path, class: "nav-link #{current_page?(path) ? "nav-link-active" : ""}" %>
+      <li><%= link_to label, path, class: (current_page?(path) ? "menu-active" : nil) %></li>
     <% end %>
+    </ul>
   </nav>
 
   <div class="sidebar-footer">
     <p class="sidebar-email"><%= Current.user.email_address %></p>
-    <%= button_to "Sign out", session_path, method: :delete, class: "btn btn-error btn-outline btn-sm" %>
+    <%= button_to "Sign out", session_path, method: :delete, class: "btn btn-sm btn-outline" %>
   </div>
 </aside>

@@ -4,11 +4,27 @@
     <div class="header-actions"><%= link_to "New post", new_post_path, class: "btn btn-primary" %></div>
   </header>
   <% if @posts.any? %>
-    <div class="card list section">
+    <ul class="list w-full max-w-xs rounded-box bg-base-100 shadow-sm section">
       <% @posts.each do |post| %>
-        <%= link_to post, class: "list-row" do %><div><h2 class="list-title"><%= post.title.presence || post.content.truncate(80) %></h2><p class="list-meta"><%= post.status.capitalize %><%= " · #{l(post.scheduled_at, format: :short)}" if post.scheduled_at %></p></div><span class="btn btn-quiet">View</span><% end %>
+        <% first_slide = post.slides.first %>
+        <% target_account_ids = post.account_ids.values.flatten.compact_blank %>
+        <% account_names = post.project&.zernio_accounts&.select { |account| target_account_ids.include?(account.account_id) }&.map(&:label) || [] %>
+        <li>
+          <%= link_to post, class: "list-row !p-2 !gap-2" do %>
+            <% if first_slide %>
+              <%= image_tag first_slide, class: "h-16 w-12 shrink-0 rounded-box object-cover", alt: "First slide for #{post.title.presence || "post"}" %>
+            <% else %>
+              <div class="flex h-16 w-12 shrink-0 items-center justify-center rounded-box bg-base-200 px-1 text-center text-xs text-base-content/60"><%= post.video.attached? ? "Video" : "Post" %></div>
+            <% end %>
+            <div class="list-col-grow min-w-0">
+              <h2 class="truncate text-sm font-semibold"><%= post.title.presence || post.content.truncate(80) %></h2>
+              <p class="truncate text-xs text-base-content/60"><%= post.project&.name || "No project" %> · <%= post.slides.attached? ? "#{post.slides.count} slides" : post.video.attached? ? "Video" : "Post" %> · <%= post.tiktok_draft? ? "TikTok draft" : "Auto publish" %></p>
+              <p class="truncate text-xs text-base-content/60"><%= account_names.to_sentence.presence || "No account" %> · <%= post.scheduled_at ? l(post.scheduled_at, format: :short) : "Draft" %></p>
+            </div>
+          <% end %>
+        </li>
       <% end %>
-    </div>
+    </ul>
   <% else %>
     <div class="card empty-state section"><h2 class="list-title">No posts yet</h2><p class="list-meta">Create a draft or schedule your first post.</p><br><%= link_to "New post", new_post_path, class: "btn btn-primary" %></div>
   <% end %>

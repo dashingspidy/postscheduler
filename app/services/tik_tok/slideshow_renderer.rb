@@ -9,18 +9,17 @@ module TikTok
 
     SCRIPT_PATH = Rails.root.join("python/slideshow_renderer.py").freeze
 
-    def initialize(item)
-      @item = item
-      @import = item.slideshow_import
+    def initialize(slideshow)
+      @slideshow = slideshow
     end
 
     def call
-      post = @item.post || @import.user.posts.create!(post_attributes)
+      post = @slideshow.post || @slideshow.user.posts.create!(post_attributes)
+      @slideshow.update!(post:) unless @slideshow.post_id == post.id
       post.slides.purge
 
       Dir.mktmpdir("slideshow-render") do |directory|
-        output_paths = render_into(directory)
-        output_paths.each_with_index do |path, index|
+        render_into(directory).each_with_index do |path, index|
           File.open(path, "rb") do |file|
             post.slides.attach(io: file, filename: "#{safe_filename}_slide_#{index + 1}.jpg", content_type: "image/jpeg")
           end
@@ -32,14 +31,14 @@ module TikTok
     private
       def post_attributes
         {
-          title: data["title"].presence || data["day"],
+          title: data["title"],
           content: data["caption"].presence || slides.join("\n"),
-          scheduled_at: @import.delivery_at_for(@item.position),
+          scheduled_at: @slideshow.first_delivery_at,
           platforms: [ "tiktok" ],
-          project: @import.project,
-          account_ids: @import.zernio_accounts.group_by(&:platform).transform_values { |accounts| accounts.map(&:account_id) },
-          publishing_provider: @import.project.publishing_provider,
-          delivery_mode: @import.delivery_mode,
+          project: @slideshow.project,
+          account_ids: @slideshow.zernio_accounts.group_by(&:platform).transform_values { |accounts| accounts.map(&:account_id) },
+          publishing_provider: @slideshow.project.publishing_provider,
+          delivery_mode: @slideshow.delivery_mode,
           status: "scheduled"
         }
       end
@@ -50,15 +49,13 @@ module TikTok
           top_label: data["title"],
           style:,
           background_images: local_backgrounds(directory),
-          background_offset: @item.position * slides.length,
+          end_slide_branding: local_end_slide_branding(directory),
           output_directory: File.join(directory, "output")
         }
         stdout, stderr, status = Open3.capture3(python_binary, SCRIPT_PATH.to_s, stdin_data: payload.to_json)
         raise Error, "Pillow renderer failed: #{stderr.presence || stdout}" unless status.success?
 
-        result = JSON.parse(stdout)
-        raise Error, result.fetch("error", "Pillow renderer returned no slide files.") if result["error"].present?
-        paths = result.fetch("slides")
+        paths = JSON.parse(stdout).fetch("slides")
         raise Error, "Pillow renderer returned an unexpected number of slides." unless paths.size == slides.size && paths.all? { |path| File.file?(path) }
 
         paths
@@ -67,7 +64,7 @@ module TikTok
       end
 
       def local_backgrounds(directory)
-        @import.background_images.each_with_index.map do |attachment, index|
+        @slideshow.background_images.each_with_index.map do |attachment, index|
           extension = attachment.filename.extension_with_delimiter.presence || ".jpg"
           destination = File.join(directory, "background-#{index}#{extension}")
           attachment.open { |file| FileUtils.cp(file.path, destination) }
@@ -75,11 +72,20 @@ module TikTok
         end
       end
 
-      def python_binary = ENV.fetch("PILLOW_PYTHON", "python3")
+      def local_end_slide_branding(directory)
+        attachment = @slideshow.project.end_slide_branding
+        return unless attachment.attached?
 
-      def data = @item.data
+        extension = attachment.filename.extension_with_delimiter.presence || ".png"
+        destination = File.join(directory, "end-slide-branding#{extension}")
+        attachment.open { |file| FileUtils.cp(file.path, destination) }
+        destination
+      end
+
+      def python_binary = ENV.fetch("PILLOW_PYTHON", "python3")
+      def data = @slideshow.data
       def slides = data.fetch("slides")
-      def safe_filename = data["day"].to_s.parameterize.presence || "slideshow"
-      def style = @import.project.rendering_style
+      def safe_filename = data["title"].to_s.parameterize.presence || "slideshow"
+      def style = @slideshow.project.rendering_style
   end
 end

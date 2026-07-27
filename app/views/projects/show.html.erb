@@ -1,23 +1,47 @@
 <div class="page">
   <header class="page-header">
     <div><p class="eyebrow">Project</p><h1 class="page-title"><%= @project.name %></h1><p class="page-subtitle"><%= @project.background_images.count %> reusable background images</p></div>
-    <div class="header-actions"><%= link_to "Upload photos", new_project_photo_path(project_id: @project.id), class: "btn btn-secondary" %><%= link_to "Create slideshow", new_slideshow_import_path(project_id: @project.id), class: "btn btn-primary" %></div>
+    <div class="header-actions"><%= link_to "Upload photos", new_project_photo_path(project_id: @project.id), class: "btn btn-secondary" %><%= button_to "Generate now", create_factory_slideshow_project_path(@project), method: :post, class: "btn btn-primary", disabled: !@project.factory_configured? %></div>
   </header>
 
-  <section class="card card-body section">
-    <div><p class="eyebrow">Publishing</p><h2 class="list-title">Zernio accounts</h2></div>
-    <% if @project.zernio_accounts.any? %><div><% @project.zernio_accounts.each do |account| %><div class="account-row"><span><strong><%= account.label %></strong> · <%= account.platform.capitalize %></span><%= button_to "Remove", zernio_account_path(account), method: :delete, class: "btn btn-error btn-outline btn-sm" %></div><% end %></div><% else %><p class="list-meta">No accounts added yet.</p><% end %>
-    <%= form_with url: zernio_accounts_path, class: "form-grid" do |form| %>
-      <%= hidden_field_tag :project_id, @project.id %>
-      <div class="field"><%= form.text_field :label, name: "zernio_account[label]", placeholder: "Account label", class: "input", aria: { label: "Account label" } %></div>
-      <div class="field"><%= form.select :platform, ZernioAccount::PLATFORMS.map { |platform| [platform.capitalize, platform] }, {}, name: "zernio_account[platform]", class: "select", aria: { label: "Platform" } %></div>
-      <div class="field"><%= form.text_field :account_id, name: "zernio_account[account_id]", placeholder: "Zernio account ID", class: "input", aria: { label: "Zernio account ID" } %></div>
-      <%= form.submit "Add account", class: "btn btn-primary" %>
-    <% end %>
-  </section>
+  <div class="grid gap-4 lg:grid-cols-2 section">
+    <section class="card bg-base-100 shadow-sm">
+      <div class="card-body gap-4">
+        <div class="flex items-start justify-between gap-3"><div><p class="eyebrow">Daily content factory</p><h2 class="card-title"><%= @project.factory_enabled? ? "Runs daily at #{@project.factory_time}" : "Daily factory paused" %></h2><p class="text-sm text-base-content/60"><%= @project.time_zone %></p></div><%= link_to "Configure", edit_project_path(@project), class: "btn btn-sm" %></div>
+        <% unless @project.factory_configured? %><div role="alert" class="alert alert-warning alert-soft text-sm">Add background photos, then configure the content profile for at least one TikTok account.</div><% else %><% unless @project.factory_enabled? %><div role="alert" class="alert alert-warning alert-soft text-sm">Daily automation is paused.</div><% end %><% end %>
+        <% upcoming = @project.slideshows.where.not(first_delivery_at: nil).where("first_delivery_at >= ?", Time.current).order(:first_delivery_at).limit(3) %>
+        <% if upcoming.any? %><div><p class="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/60">Upcoming</p><ul class="space-y-1"><% upcoming.each do |slideshow| %><li class="truncate text-sm"><%= slideshow.first_delivery_at.in_time_zone(@project.time_zone).strftime("%b %-d, %H:%M") %> · <%= slideshow.data["title"].presence || slideshow.content_topic&.pillar || "Generating" %></li><% end %></ul></div><% end %>
+      </div>
+    </section>
+
+    <section class="card bg-base-100 shadow-sm">
+      <div class="card-body gap-4">
+        <div class="flex items-end justify-between gap-3"><div><p class="eyebrow">Publishing</p><h2 class="card-title">Connected accounts</h2></div><%= form_with url: project_path(@project), method: :get, class: "flex items-center gap-1" do |form| %><%= form.select :provider, [["All providers", ""]] + @account_providers.map { |provider| [provider.humanize, provider] }, { selected: @selected_account_provider }, class: "select select-sm" %><%= form.submit "Filter", class: "btn btn-sm" %><% end %></div>
+        <% if @connected_accounts.any? %><ul class="list -mx-2"><% @connected_accounts.each do |account| %><li class="list-row !p-2 !gap-2"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-box bg-base-200 text-xs font-semibold"><%= account.platform.first.upcase %></div><div class="list-col-grow min-w-0"><p class="truncate text-sm font-semibold"><%= account.label %></p><p class="truncate text-xs text-base-content/60"><%= account.provider.humanize %> · <%= account.platform.capitalize %><% if account.tiktok? %> · <%= account.factory_posts_per_day %> drafts/day<% end %></p></div><div class="flex shrink-0 gap-1"><%= link_to "Profile", edit_zernio_account_path(account), class: "btn btn-sm btn-ghost" if account.tiktok? %><%= button_to "Remove", zernio_account_path(account), method: :delete, class: "btn btn-sm btn-ghost" %></div></li><% end %></ul><% elsif @project.zernio_accounts.any? %><p class="text-sm text-base-content/60">No accounts for this provider.</p><% else %><p class="text-sm text-base-content/60">No accounts added yet.</p><% end %>
+        <details class="collapse collapse-arrow border border-base-300 bg-base-100">
+          <summary class="collapse-title min-h-0 py-3 text-sm font-semibold">Connect available <%= @project.publishing_provider.humanize %> accounts</summary>
+          <div class="collapse-content">
+            <% if @available_provider_accounts_error %>
+              <div role="alert" class="alert alert-error alert-soft text-sm"><%= @available_provider_accounts_error %></div>
+            <% elsif @available_provider_accounts.any? %>
+              <%= form_with url: zernio_accounts_path, method: :post, class: "space-y-2" do %>
+                <%= hidden_field_tag :project_id, @project.id %><%= hidden_field_tag :provider, @project.publishing_provider %>
+                <% @available_provider_accounts.each do |account| %>
+                  <label class="flex items-center gap-2 rounded-box px-2 py-1 text-sm hover:bg-base-200"><%= check_box_tag "provider_account_ids[]", account._id, false, class: "checkbox checkbox-sm" %><span><strong><%= account.display_name.presence || account.username.presence || account._id %></strong> · <%= account.platform.capitalize %></span></label>
+                <% end %>
+                <%= submit_tag "Connect selected accounts", class: "btn btn-sm" %>
+              <% end %>
+            <% else %>
+              <p class="text-sm text-base-content/60">All available accounts from this provider are already connected.</p>
+            <% end %>
+          </div>
+        </details>
+      </div>
+    </section>
+  </div>
 
   <section class="section">
-    <div><p class="eyebrow">Assets</p><h2 class="list-title">Background images</h2></div>
-    <% if @project.background_images.attached? %><div class="preview-grid section"><% @project.background_images.each do |image| %><%= image_tag image, class: "preview-image" %><% end %></div><% else %><p class="list-meta">No photos yet. Upload photos to use this project for slideshow rendering.</p><% end %>
+    <div class="flex items-end justify-between gap-3"><div><p class="eyebrow">Assets</p><h2 class="card-title">Background images</h2></div><%= link_to "Manage photos", new_project_photo_path(project_id: @project.id), class: "btn btn-sm btn-ghost" %></div>
+    <% if @project.background_images.attached? %><div class="grid grid-cols-3 gap-2 sm:grid-cols-5 section"><% @project.background_images.each do |image| %><%= image_tag image, class: "aspect-[9/16] w-full rounded-box object-cover", loading: "lazy" %><% end %></div><% else %><div role="alert" class="alert alert-info alert-soft section text-sm">No photos yet. Upload photos to use this project for slideshow rendering.</div><% end %>
   </section>
 </div>

@@ -24,21 +24,26 @@ Things you may want to cover:
 * ...
 # Postscheduler
 
+## Daily content factory
+
+Configure a project’s **Daily content factory** with its audience, tone, content rules, and a list of content pillars. Once enabled, the production scheduler creates one slideshow per project every day at 12:05 AM, schedules it for the project’s chosen time, and rotates through the pillars. A topic ledger keeps recent titles available to the AI so it can avoid repetition.
+
+Use **Generate now** on a ready project to create that day’s factory slideshow immediately. Each factory run produces a normal slideshow and post, so it follows the same preview, retry, and publishing flow as manually created slideshows.
+
 ## TikTok slideshows
 
-Create an Education, Muslim, or other **Project** first. Each project has its own connected Zernio TikTok account, reusable JPG/PNG background-image library, and rendering style. Then open **Import slideshows**, choose the project, and upload a CSV. Extra background images are optional and apply only to that import.
+Create an Education, Muslim, or other **Project** first. Each project has its own connected TikTok account, reusable JPG/PNG background-image library, and rendering style. Then open **Create slideshow**, choose the project, and describe the carousel you want to create. Gemma generates a title, caption, and the requested number of slide captions; the project photos become the slide backgrounds.
 
-Each CSV row creates a slideshow from `Slide1` through `SlideN`. Supported optional fields are `Day`, `Tactic`, `Title`, `Caption`, `Keywords`, `Hashtags`, and `scheduled_at`. `Title` is displayed at the top of the first slide. A row with `scheduled_at` is sent to Zernio after rendering; rows without it remain drafts for review.
+Slideshow text generation uses Google Gemma through Amazon Bedrock Mantle's OpenAI-compatible endpoint in `us-east-1`. Generate a long-term Bedrock API key and add this Rails credential:
 
-Slideshow rendering uses the bundled Python/Pillow renderer. Rails keeps ownership of jobs, progress, storage, scheduling, and publishing; Pillow only creates the slide JPG files. Production Docker builds install Pillow plus DejaVu and Noto Color Emoji fonts for consistent rendering.
-
-For local development, install Pillow and point Rails at that Python executable:
-
-```bash
-python3 -m venv .venv
-.venv/bin/pip install -r python/requirements.txt
-PILLOW_PYTHON="$PWD/.venv/bin/python" bin/dev
+```yaml
+bedrock:
+  api_key: your_bedrock_api_key
 ```
+
+The application uses `google.gemma-4-26b-a4b` in `us-east-1`; no region or model credential is needed.
+
+Slideshow rendering uses the bundled Python/Pillow renderer. Rails owns jobs, storage, scheduling, and publishing; Pillow creates the slide JPG files. For local development, install Pillow and point Rails at that Python executable with `PILLOW_PYTHON`.
 
 `Video::EndCardConcatenator` appends a two-second project-branded end card to a supplied MP4. It requires FFmpeg with the `drawtext` filter enabled and a project app icon.
 

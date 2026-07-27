@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_17_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_27_110700) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.integer "blob_id", null: false
     t.datetime "created_at", null: false
@@ -39,6 +39,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_150000) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "content_topics", force: :cascade do |t|
+    t.string "angle"
+    t.datetime "created_at", null: false
+    t.integer "daily_slot", default: 1, null: false
+    t.string "hook_style"
+    t.string "pillar", null: false
+    t.integer "project_id", null: false
+    t.date "scheduled_for", null: false
+    t.integer "slideshow_id"
+    t.string "status", default: "planned", null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.integer "zernio_account_id"
+    t.index ["project_id", "pillar", "angle"], name: "index_content_topics_on_project_id_and_pillar_and_angle"
+    t.index ["project_id"], name: "index_content_topics_on_project_id"
+    t.index ["slideshow_id"], name: "index_content_topics_on_slideshow_id"
+    t.index ["zernio_account_id", "scheduled_for", "daily_slot"], name: "index_content_topics_on_account_date_and_slot", unique: true
+    t.index ["zernio_account_id"], name: "index_content_topics_on_zernio_account_id"
+  end
+
   create_table "posts", force: :cascade do |t|
     t.json "account_ids", default: {}, null: false
     t.text "content", null: false
@@ -63,10 +83,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_150000) do
 
   create_table "projects", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.integer "default_slide_count", default: 5, null: false
+    t.boolean "factory_enabled", default: false, null: false
+    t.string "factory_time", default: "09:00", null: false
     t.string "name", null: false
     t.string "publishing_provider", default: "zernio", null: false
     t.json "style", default: {}, null: false
     t.string "tiktok_account_id"
+    t.string "time_zone", default: "Europe/Brussels", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["user_id"], name: "index_projects_on_user_id"
@@ -81,45 +105,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_150000) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
-  create_table "slideshow_import_targets", force: :cascade do |t|
+  create_table "slideshow_targets", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.integer "slideshow_import_id", null: false
+    t.integer "slideshow_id", null: false
     t.datetime "updated_at", null: false
     t.integer "zernio_account_id", null: false
-    t.index ["slideshow_import_id", "zernio_account_id"], name: "index_slideshow_import_targets_uniqueness", unique: true
-    t.index ["slideshow_import_id"], name: "index_slideshow_import_targets_on_slideshow_import_id"
-    t.index ["zernio_account_id"], name: "index_slideshow_import_targets_on_zernio_account_id"
+    t.index ["slideshow_id", "zernio_account_id"], name: "index_slideshow_import_targets_uniqueness", unique: true
+    t.index ["slideshow_id"], name: "index_slideshow_targets_on_slideshow_id"
+    t.index ["zernio_account_id"], name: "index_slideshow_targets_on_zernio_account_id"
   end
 
-  create_table "slideshow_imports", force: :cascade do |t|
-    t.integer "completed_rows", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.string "delivery_mode", default: "tiktok_draft", null: false
-    t.text "error_message"
-    t.integer "failed_rows", default: 0, null: false
-    t.datetime "first_delivery_at"
-    t.integer "project_id"
-    t.string "status", default: "pending", null: false
-    t.string "tiktok_account_id"
-    t.integer "total_rows", default: 0, null: false
-    t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
-    t.index ["project_id"], name: "index_slideshow_imports_on_project_id"
-    t.index ["user_id"], name: "index_slideshow_imports_on_user_id"
-  end
-
-  create_table "slideshow_items", force: :cascade do |t|
+  create_table "slideshows", force: :cascade do |t|
+    t.integer "content_topic_id"
     t.datetime "created_at", null: false
     t.json "data", default: {}, null: false
+    t.string "delivery_mode", default: "tiktok_draft", null: false
     t.text "error_message"
-    t.integer "position", null: false
+    t.date "factory_date"
+    t.integer "factory_slot", default: 1, null: false
+    t.datetime "first_delivery_at"
     t.integer "post_id"
-    t.integer "slideshow_import_id", null: false
+    t.integer "project_id"
+    t.text "prompt"
+    t.integer "slide_count", default: 5, null: false
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
-    t.index ["post_id"], name: "index_slideshow_items_on_post_id"
-    t.index ["slideshow_import_id", "position"], name: "index_slideshow_items_on_slideshow_import_id_and_position", unique: true
-    t.index ["slideshow_import_id"], name: "index_slideshow_items_on_slideshow_import_id"
+    t.integer "user_id", null: false
+    t.integer "zernio_account_id"
+    t.index ["content_topic_id"], name: "index_slideshows_on_content_topic_id"
+    t.index ["post_id"], name: "index_slideshows_on_post_id"
+    t.index ["project_id"], name: "index_slideshows_on_project_id"
+    t.index ["user_id"], name: "index_slideshows_on_user_id"
+    t.index ["zernio_account_id", "factory_date", "factory_slot"], name: "index_slideshows_on_account_date_and_slot", unique: true, where: "factory_date IS NOT NULL"
+    t.index ["zernio_account_id"], name: "index_slideshows_on_zernio_account_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -147,7 +165,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_150000) do
   create_table "zernio_accounts", force: :cascade do |t|
     t.string "account_id", null: false
     t.boolean "active", default: true, null: false
+    t.json "content_pillar_weights", default: {}, null: false
+    t.json "content_pillars", default: [], null: false
+    t.text "content_strategy"
     t.datetime "created_at", null: false
+    t.boolean "factory_enabled", default: true, null: false
+    t.integer "factory_posts_per_day", default: 10, null: false
     t.string "label", null: false
     t.string "platform", null: false
     t.integer "project_id", null: false
@@ -159,16 +182,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_150000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "content_topics", "projects"
+  add_foreign_key "content_topics", "slideshows"
+  add_foreign_key "content_topics", "zernio_accounts"
   add_foreign_key "posts", "projects"
   add_foreign_key "posts", "users"
   add_foreign_key "projects", "users"
   add_foreign_key "sessions", "users"
-  add_foreign_key "slideshow_import_targets", "slideshow_imports"
-  add_foreign_key "slideshow_import_targets", "zernio_accounts"
-  add_foreign_key "slideshow_imports", "projects"
-  add_foreign_key "slideshow_imports", "users"
-  add_foreign_key "slideshow_items", "posts"
-  add_foreign_key "slideshow_items", "slideshow_imports"
+  add_foreign_key "slideshow_targets", "slideshows"
+  add_foreign_key "slideshow_targets", "zernio_accounts"
+  add_foreign_key "slideshows", "content_topics"
+  add_foreign_key "slideshows", "posts"
+  add_foreign_key "slideshows", "projects"
+  add_foreign_key "slideshows", "users"
+  add_foreign_key "slideshows", "zernio_accounts"
   add_foreign_key "video_creations", "posts"
   add_foreign_key "video_creations", "projects"
   add_foreign_key "video_creations", "users"

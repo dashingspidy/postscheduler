@@ -1,4 +1,16 @@
 <div class="page">
   <header class="page-header"><div><p class="eyebrow">Workspaces</p><h1 class="page-title">Projects</h1><p class="page-subtitle">Organize content, visual assets, and connected accounts by brand.</p></div><div class="header-actions"><%= link_to "New project", new_project_path, class: "btn btn-primary" %></div></header>
-  <% if @projects.any? %><div class="project-grid section"><% @projects.each do |project| %><%= link_to project, class: "card project-card" do %><h2 class="list-title"><%= project.name %></h2><p class="list-meta"><%= project.background_images.count %> reusable background images</p><% end %><% end %></div><% else %><div class="card empty-state section"><h2 class="list-title">Create your first project</h2><p class="list-meta">Projects keep your educational and Muslim app content completely separate.</p><br><%= link_to "New project", new_project_path, class: "btn btn-primary" %></div><% end %>
+  <% if @projects.any? %>
+    <div class="grid gap-3 sm:grid-cols-2 section">
+      <% @projects.each do |project| %>
+        <%= link_to project, class: "card card-sm bg-base-100 shadow-sm transition-shadow hover:shadow-md" do %>
+          <div class="card-body gap-1">
+            <h2 class="card-title"><%= project.name %></h2>
+            <p class="text-sm text-base-content/60"><%= project.background_images.count %> background images · <%= project.zernio_accounts.active.count %> active accounts</p>
+            <div class="card-actions justify-end"><span class="link link-hover text-sm">Open project</span></div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %><div class="card bg-base-100 shadow-sm empty-state section"><h2 class="list-title">Create your first project</h2><p class="list-meta">Projects keep your educational and Muslim app content completely separate.</p><br><%= link_to "New project", new_project_path, class: "btn btn-primary" %></div><% end %>
 </div>

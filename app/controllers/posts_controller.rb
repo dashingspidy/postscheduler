@@ -3,7 +3,9 @@ class PostsController < ApplicationController
   before_action :load_post_form_data, only: %i[new create edit update]
 
   def index
-    @posts = Current.user.posts.order(scheduled_at: :asc, created_at: :desc)
+    @posts = Current.user.posts
+      .includes(project: :zernio_accounts, slides_attachments: :blob)
+      .order(scheduled_at: :asc, created_at: :desc)
   end
 
   def show; end

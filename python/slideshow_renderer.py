@@ -9,21 +9,17 @@ from PIL import Image, ImageDraw, ImageFont
 
 WIDTH = 1080
 HEIGHT = 1920
-FONT_CANDIDATES = (
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-    "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
-    "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-    "/System/Library/Fonts/SFCompactRounded.ttf",
-)
-EMOJI_FONT_CANDIDATES = (
-    "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf",
-    "/System/Library/Fonts/Apple Color Emoji.ttc",
-)
-EMOJI_FONT_SIZES = (32, 40, 48, 52, 64, 96, 160)
+ASSET_DIRECTORY = Path(__file__).resolve().parent
+FONT_PATHS = {
+    "body": ASSET_DIRECTORY / "Inter_28pt-Bold.ttf",
+    "hook": ASSET_DIRECTORY / "Inter_28pt-ExtraBold.ttf",
+    "label": ASSET_DIRECTORY / "Inter_28pt-SemiBold.ttf",
+}
+EMOJI_FONT_PATH = ASSET_DIRECTORY / "NotoColorEmoji.ttf"
+EMOJI_SOURCE_SIZE = 109 # The only embedded bitmap strike in Noto Color Emoji.
 
 
 def integer_style_value(style, key, default):
-    """Return a usable integer when an optional HTML form value is blank."""
     value = style.get(key)
     if value is None or str(value).strip() == "":
         return default
@@ -31,62 +27,73 @@ def integer_style_value(style, key, default):
 
 
 def color_style_value(style, key, default):
-    """Return a valid fallback when an optional color field is blank."""
     value = style.get(key)
     if value is None or not str(value).strip():
         return default
     return value
 
 
-def font_path(candidates):
-    return next((path for path in candidates if Path(path).is_file()), None)
+def load_font(size, kind="body"):
+    path = FONT_PATHS.get(kind, FONT_PATHS["body"])
+    if not path.is_file():
+        raise ValueError(f"Missing slideshow font: {path.name}")
+    return ImageFont.truetype(path, size)
 
 
-def load_font(size, emoji=False):
-    path = font_path(EMOJI_FONT_CANDIDATES if emoji else FONT_CANDIDATES)
-    if path:
-        try:
-            return ImageFont.truetype(path, min(EMOJI_FONT_SIZES, key=lambda available: abs(available - size)) if emoji else size)
-        except OSError:
-            pass
-    return ImageFont.truetype(font_path(FONT_CANDIDATES), size)
+def is_emoji(character):
+    codepoint = ord(character)
+    return (
+        0x1F000 <= codepoint <= 0x1FAFF
+        or 0x2600 <= codepoint <= 0x27BF
+        or codepoint in (0x00A9, 0x00AE, 0x203C, 0x2049, 0x2122, 0x2139, 0x3030, 0x303D, 0x3297, 0x3299)
+    )
 
 
-def is_emoji(char):
-    code = ord(char)
-    return 0x1F000 <= code <= 0x1FAFF or 0x2600 <= code <= 0x27BF
+def emoji_image(character, target_size):
+    """Rasterize Noto's fixed-size colour glyph and scale it for the text line."""
+    font = ImageFont.truetype(EMOJI_FONT_PATH, EMOJI_SOURCE_SIZE)
+    box = font.getbbox(character)
+    canvas = Image.new("RGBA", (box[2] - box[0] + 8, box[3] - box[1] + 8), (0, 0, 0, 0))
+    ImageDraw.Draw(canvas).text((4 - box[0], 4 - box[1]), character, font=font, embedded_color=True)
+    glyph_box = canvas.getbbox()
+    if not glyph_box:
+        return None
+    glyph = canvas.crop(glyph_box)
+    height = max(1, round(target_size * 1.08))
+    width = max(1, round(glyph.width * height / glyph.height))
+    return glyph.resize((width, height), Image.Resampling.LANCZOS)
 
 
-def text_runs(text, size):
-    runs, current, emoji = [], "", False
-    for char in text:
-        kind = is_emoji(char) if char not in ("\ufe0f", "\u200d") else emoji
-        if current and kind != emoji:
-            runs.append((current, load_font(size, emoji), emoji))
-            current = ""
-        current += char
-        emoji = kind
-    if current:
-        runs.append((current, load_font(size, emoji), emoji))
-    return runs
+def line_parts(draw, line, size, stroke_width, kind="body"):
+    """Return display parts and their combined bounds; coloured emoji are inline images."""
+    parts, normal = [], ""
+    def append_normal():
+        nonlocal normal
+        if normal:
+            font = load_font(size, kind)
+            box = draw.textbbox((0, 0), normal, font=font, stroke_width=stroke_width)
+            parts.append(("text", normal, font, box[2] - box[0], box[3] - box[1], box))
+            normal = ""
+    for character in line:
+        if is_emoji(character):
+            append_normal()
+            glyph = emoji_image(character, size)
+            if glyph:
+                parts.append(("emoji", glyph, None, glyph.width, glyph.height, None))
+        elif ord(character) not in (0xFE0F, 0x200D):
+            normal += character
+    append_normal()
+    width = sum(part[3] for part in parts)
+    height = max((part[4] for part in parts), default=round(size * 1.2))
+    return parts, width, height
 
 
-def line_metrics(draw, line, size, stroke_width):
-    runs = text_runs(line, size)
-    measured = []
-    for text, font, emoji in runs:
-        box = draw.textbbox((0, 0), text, font=font, stroke_width=0 if emoji else stroke_width, embedded_color=emoji)
-        measured.append((text, font, emoji, box, box[2] - box[0], box[3] - box[1]))
-    # Glyph bounding boxes omit ascender/descender space, which makes adjacent
-    # caption lines look as though they overlap. Reserve a full typographic line
-    # box instead.
-    line_height = max((run[5] for run in measured), default=0)
-    if measured:
-        line_height = max(line_height, round(size * 1.2))
-    return measured, sum(run[4] for run in measured), line_height
+def line_metrics(draw, line, size, stroke_width, kind="body"):
+    parts, width, height = line_parts(draw, line, size, stroke_width, kind)
+    return width, height, parts
 
 
-def wrap_text(draw, text, size, max_width, stroke_width):
+def wrap_text(draw, text, size, max_width, stroke_width, kind="body"):
     lines = []
     for paragraph in text.splitlines() or [text]:
         words = paragraph.split()
@@ -95,7 +102,7 @@ def wrap_text(draw, text, size, max_width, stroke_width):
         line = words.pop(0)
         for word in words:
             candidate = f"{line} {word}"
-            if line_metrics(draw, candidate, size, stroke_width)[1] <= max_width:
+            if line_metrics(draw, candidate, size, stroke_width, kind)[0] <= max_width:
                 line = candidate
             else:
                 lines.append(line)
@@ -104,49 +111,60 @@ def wrap_text(draw, text, size, max_width, stroke_width):
     return lines or [text]
 
 
-def fit_text(draw, text, style):
+def fit_text(draw, text, style, kind="body"):
     max_width = int(WIDTH * float(style.get("text_max_width_ratio", 0.86)))
     maximum = integer_style_value(style, "font_size", 58)
     minimum = integer_style_value(style, "min_font_size", 38)
     spacing = integer_style_value(style, "line_spacing", 8)
     stroke = integer_style_value(style, "stroke_width", 3)
     for size in range(maximum, minimum - 1, -4):
-        lines = wrap_text(draw, text, size, max_width, stroke)
-        metrics = [line_metrics(draw, line, size, stroke) for line in lines]
-        height = sum(metric[2] for metric in metrics) + spacing * max(len(metrics) - 1, 0)
+        lines = wrap_text(draw, text, size, max_width, stroke, kind)
+        metrics = [line_metrics(draw, line, size, stroke, kind) for line in lines]
+        height = sum(max(metric[1], round(size * 1.2)) for metric in metrics) + spacing * max(len(metrics) - 1, 0)
         if height <= HEIGHT * 0.28:
-            return metrics, height
-    lines = wrap_text(draw, text, minimum, max_width, stroke)
-    metrics = [line_metrics(draw, line, minimum, stroke) for line in lines]
-    return metrics, sum(metric[2] for metric in metrics) + spacing * max(len(metrics) - 1, 0)
+            return lines, size, height
+    lines = wrap_text(draw, text, minimum, max_width, stroke, kind)
+    height = sum(max(line_metrics(draw, line, minimum, stroke, kind)[1], round(minimum * 1.2)) for line in lines) + spacing * max(len(lines) - 1, 0)
+    return lines, minimum, height
 
 
-def draw_caption(image, text, y, style, background=False):
+def draw_caption(image, text, y, style, background=True, kind="body"):
     draw = ImageDraw.Draw(image)
-    metrics, total_height = fit_text(draw, text, style)
+    lines, size, total_height = fit_text(draw, text, style, kind)
     spacing = integer_style_value(style, "line_spacing", 8)
     stroke = integer_style_value(style, "stroke_width", 3)
     padding_x = integer_style_value(style, "caption_background_padding_x", 28)
     padding_y = integer_style_value(style, "caption_background_padding_y", 16)
-
-    for runs, width, height in metrics:
+    for line in lines:
+        width, height, parts = line_metrics(draw, line, size, stroke, kind)
         x = (WIDTH - width) / 2
         if background:
-            draw.rectangle(
+            draw.rounded_rectangle(
                 (x - padding_x, y - padding_y, x + width + padding_x, y + height + padding_y),
+                radius=integer_style_value(style, "caption_background_radius", 18),
                 fill=color_style_value(style, "caption_background_color", "white"),
             )
-        cursor_x = x
-        for run, font, emoji, box, run_width, run_height in runs:
-            draw_y = y + (height - run_height) / 2 - box[1]
-            draw.text(
-                (cursor_x - box[0], draw_y), run, font=font,
-                fill=color_style_value(style, "text_color", "black"),
-                stroke_width=0 if emoji else stroke, stroke_fill=color_style_value(style, "stroke_color", "white"), embedded_color=emoji,
-            )
-            cursor_x += run_width
-        y += height + spacing
+        cursor = x
+        for part_type, value, font, part_width, part_height, box in parts:
+            if part_type == "emoji":
+                image.alpha_composite(value, (round(cursor), round(y + (height - part_height) / 2)))
+            else:
+                draw.text(
+                    (cursor - box[0], y - box[1]), value, font=font,
+                    fill=color_style_value(style, "text_color", "black"),
+                    stroke_width=stroke, stroke_fill=color_style_value(style, "stroke_color", "white"),
+                )
+            cursor += part_width
+        y += max(height, round(size * 1.2)) + spacing
     return total_height
+
+
+def draw_end_slide_branding(image, path):
+    branding = Image.open(path).convert("RGBA")
+    branding.thumbnail((740, 210), Image.Resampling.LANCZOS)
+    x = (WIDTH - branding.width) // 2
+    y = HEIGHT - branding.height - 100
+    image.alpha_composite(branding, (x, y))
 
 
 def crop_to_portrait(path):
@@ -168,15 +186,17 @@ def render(payload):
         raise ValueError("At least one slide and one background image are required.")
 
     outputs = []
-    background_offset = int(payload.get("background_offset", 0))
     for index, text in enumerate(slides):
-        image = crop_to_portrait(backgrounds[(background_offset + index) % len(backgrounds)])
+        image = crop_to_portrait(backgrounds[index % len(backgrounds)])
         if index == 0 and payload.get("top_label"):
-            tactic_style = style | {"font_size": style.get("tactic_font_size", 38), "min_font_size": 24, "stroke_width": 0}
-            draw_caption(image, payload["top_label"], integer_style_value(style, "tactic_top_margin", 240), tactic_style, background=True)
+            label_style = style | {"font_size": style.get("tactic_font_size", 38), "min_font_size": 24, "stroke_width": 0}
+            draw_caption(image, payload["top_label"], integer_style_value(style, "tactic_top_margin", 240), label_style, kind="label")
         draw = ImageDraw.Draw(image)
-        _, height = fit_text(draw, text, style)
-        draw_caption(image, text, (HEIGHT - height) / 2 + integer_style_value(style, "text_vertical_offset", 0), style, background=True)
+        font_kind = "hook" if index == 0 else "body"
+        _, _, height = fit_text(draw, text, style, font_kind)
+        draw_caption(image, text, (HEIGHT - height) / 2 + integer_style_value(style, "text_vertical_offset", 0), style, kind=font_kind)
+        if index == len(slides) - 1 and payload.get("end_slide_branding"):
+            draw_end_slide_branding(image, payload["end_slide_branding"])
         output = output_directory / f"slide_{index + 1}.jpg"
         image.convert("RGB").save(output, quality=95)
         outputs.append(str(output))

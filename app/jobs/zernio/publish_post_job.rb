@@ -5,6 +5,7 @@ module Zernio
 
     def perform(post)
       return if post.provider_post_id.present?
+      return if post.scheduled_at&.future?
 
       post.update!(status: "publishing")
       Publishing::Dispatcher.publish(post)

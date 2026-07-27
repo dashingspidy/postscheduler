@@ -1,0 +1,24 @@
+<div class="page">
+  <header class="page-header"><div><p class="eyebrow">Content factory</p><h1 class="page-title">Slideshows</h1><p class="page-subtitle">Your projects’ generated slideshow history.</p></div></header>
+  <% if @slideshows.any? %>
+    <ul class="list w-full max-w-xs rounded-box bg-base-100 shadow-sm section">
+      <% @slideshows.each do |slideshow| %>
+        <li>
+          <%= link_to slideshow, class: "list-row !p-2 !gap-2" do %>
+            <% first_slide = slideshow.post&.slides&.first %>
+            <% if first_slide %>
+              <%= image_tag first_slide, class: "h-16 w-12 shrink-0 rounded-box object-cover", alt: "First slide for #{slideshow.data["title"].presence || slideshow.project.name}" %>
+            <% else %>
+              <div class="flex h-16 w-12 shrink-0 items-center justify-center rounded-box bg-base-200 px-1 text-center text-xs text-base-content/60">Preparing</div>
+            <% end %>
+            <div class="list-col-grow min-w-0">
+              <h2 class="truncate text-sm font-semibold"><%= slideshow.data["title"].presence || slideshow.project.name %></h2>
+              <p class="truncate text-xs text-base-content/60"><%= slideshow.project.name %> · <%= slideshow.slide_count %> slides · TikTok draft</p>
+              <p class="truncate text-xs text-base-content/60"><%= slideshow.zernio_accounts.map(&:label).to_sentence.presence || "No account" %> · <%= slideshow.first_delivery_at ? slideshow.first_delivery_at.in_time_zone(slideshow.project.time_zone).strftime("%b %-d, %H:%M") : l(slideshow.created_at, format: :short) %></p>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %><div class="card empty-state section"><h2 class="list-title">No generated slideshows yet</h2><p class="list-meta">Configure an account factory, then use Generate now or wait for its daily run.</p></div><% end %>
+</div>

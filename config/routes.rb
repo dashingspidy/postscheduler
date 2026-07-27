@@ -14,12 +14,12 @@ Rails.application.routes.draw do
   get "dashboard", to: "dashboard#index"
   resources :posts
   resources :video_creations, only: %i[index new create show]
-  resources :projects
-  resources :project_photos, only: %i[new create]
-  resources :zernio_accounts, only: %i[create destroy]
-  resources :slideshows, controller: "slideshow_imports", as: :slideshow_imports, only: %i[index new create show destroy] do
-    post :start, on: :member
+  resources :projects do
+    post :create_factory_slideshow, on: :member
   end
+  resources :project_photos, only: %i[new create]
+  resources :zernio_accounts, only: %i[create edit update destroy]
+  resources :slideshows, only: %i[index show destroy]
   root to: "dashboard#index"
   # get "sign_up", to: "registration#new"
   post "registration", to: "registration#create"

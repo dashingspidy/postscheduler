@@ -10,7 +10,8 @@ gem "turbo-rails"
 gem "stimulus-rails"
 gem "tailwindcss-rails"
 gem "jbuilder"
-gem "csv"
+gem "ruby-openai", "~> 8.3"
+gem "rmagick", "~> 7.0"
 
 gem "bcrypt", "~> 3.1.7"
 

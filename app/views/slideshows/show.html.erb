@@ -1,0 +1,28 @@
+<% slideshow = @slideshow %>
+<% if slideshow.generating? || slideshow.rendering? %><meta http-equiv="refresh" content="4"><% end %>
+
+<div class="page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Slideshow</p>
+      <h1 class="page-title"><%= slideshow.data["title"].presence || slideshow.project.name %></h1>
+      <p class="page-subtitle"><%= slideshow.status.capitalize %><%= " · refreshes automatically" if slideshow.generating? || slideshow.rendering? %></p>
+      <p class="field-hint"><%= slideshow.prompt %></p>
+    </div>
+    <div class="header-actions"><%= button_to "Delete slideshow", slideshow_path(slideshow), method: :delete, class: "btn btn-error btn-outline", form: { data: { turbo_confirm: "Delete this slideshow and its generated images?" } } %></div>
+  </header>
+
+  <% if slideshow.error_message.present? %><p class="alert alert-error section"><%= slideshow.error_message %></p><% end %>
+
+  <% if slideshow.post&.slides&.attached? %>
+    <section class="card bg-base-100 shadow-sm card-body section">
+      <p class="eyebrow">Generated content</p><h2 class="page-title"><%= slideshow.post.title %></h2>
+      <div class="preview-grid section"><% slideshow.post.slides.each do |slide| %><%= image_tag slide, class: "preview-image" %><% end %></div>
+      <div class="form-actions section"><%= link_to "Review generated post", slideshow.post, class: "btn btn-secondary" %></div>
+    </section>
+  <% elsif slideshow.pending? %>
+    <div class="card empty-state section"><h2 class="list-title">Ready to create</h2><p class="list-meta">This slideshow has not started yet.</p></div>
+  <% else %>
+    <div class="card empty-state section"><h2 class="list-title">Creating your slideshow</h2><p class="list-meta">Writing the slides and rendering your images now.</p></div>
+  <% end %>
+</div>

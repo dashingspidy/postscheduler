@@ -5,7 +5,7 @@ class Post < ApplicationRecord
   belongs_to :project, optional: true
   has_many_attached :slides
   has_one_attached :video
-  has_one :slideshow_item, dependent: :nullify
+  has_one :slideshow, dependent: :nullify
   has_one :video_creation, dependent: :nullify
 
   validates :content, presence: true

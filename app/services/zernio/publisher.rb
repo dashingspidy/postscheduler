@@ -24,8 +24,9 @@ module Zernio
           title: @post.title.presence,
           content: @post.content,
           media_items: media_items,
-          publish_now: true,
-          timezone: Time.zone.tzinfo.name,
+          publish_now: !@post.tiktok_draft?,
+          is_draft: @post.tiktok_draft?,
+          timezone: @post.project&.time_zone || Time.zone.tzinfo.name,
           platforms: targets,
           tiktok_settings: tiktok_settings
         )

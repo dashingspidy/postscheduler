@@ -13,7 +13,7 @@
     </div>
   </div>
 
-  <section class="card calendar">
+  <section class="card bg-base-100 shadow-sm calendar">
     <div class="calendar-toolbar">
       <%= link_to "←", dashboard_path(month: @month.prev_month.strftime("%Y-%m")), class: "calendar-button", aria: { label: "Previous month" } %>
       <h2 class="calendar-month"><%= @month.strftime("%B %Y") %></h2>
