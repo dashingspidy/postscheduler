@@ -24,8 +24,11 @@ module Zernio
           title: @post.title.presence,
           content: @post.content,
           media_items: media_items,
-          publish_now: !@post.tiktok_draft?,
-          is_draft: @post.tiktok_draft?,
+          # Zernio's top-level draft only saves inside Zernio. TikTok Creator
+          # Inbox drafts are dispatched immediately and controlled by
+          # tiktok_settings.draft below.
+          publish_now: true,
+          is_draft: false,
           timezone: @post.project&.time_zone || Time.zone.tzinfo.name,
           platforms: targets,
           tiktok_settings: tiktok_settings
@@ -68,7 +71,6 @@ module Zernio
           express_consent_given: true,
           media_type: @post.video.attached? ? "video" : "photo",
           photo_cover_index: @post.video.attached? ? nil : 0,
-          auto_add_music: @post.video.attached? ? nil : true,
           description: @post.content
         )
       end
