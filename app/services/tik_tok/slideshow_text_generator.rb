@@ -6,6 +6,7 @@ module TikTok
     class Error < StandardError; end
     class InvalidResponse < Error; end
 
+    TIKTOK_PHOTO_CAPTION_LIMIT = 90
     BEDROCK_REGION = "us-east-1"
     BEDROCK_MODEL = "google.gemma-4-26b-a4b"
 
@@ -58,7 +59,7 @@ module TikTok
         <<~PROMPT
           You write concise, engaging TikTok carousel text. Return only valid JSON with exactly these keys:
           title (string), caption (string), slides (array of #{@slideshow.slide_count} strings).
-          Make every slide self-contained, readable on a phone, and at most 180 characters. The first slide must follow the required hook style from the brief, while the title and all slides must remain faithful to its required angle. The final slide must include a concise call to action. Do not add markdown, hashtags, or keys beyond the requested schema.
+          Make the caption at most #{TIKTOK_PHOTO_CAPTION_LIMIT} characters because TikTok photo posts use it as the slideshow title. Make every slide self-contained, readable on a phone, and at most 180 characters. The first slide must follow the required hook style from the brief, while the title and all slides must remain faithful to its required angle. The final slide must include a concise call to action. Do not add markdown, hashtags, or keys beyond the requested schema.
         PROMPT
       end
 
@@ -69,9 +70,11 @@ module TikTok
         slides = Array(parsed.fetch("slides")).map { |slide| slide.to_s.strip }.reject(&:blank?)
         raise InvalidResponse, "Gemma returned an empty title." if title.blank?
         raise InvalidResponse, "Gemma returned #{slides.length} slides; expected #{@slideshow.slide_count}." unless slides.length == @slideshow.slide_count
+        caption = caption.presence || title
+        raise InvalidResponse, "Gemma returned caption text that is too long; expected at most #{TIKTOK_PHOTO_CAPTION_LIMIT} characters." if caption.length > TIKTOK_PHOTO_CAPTION_LIMIT
         raise InvalidResponse, "Gemma returned slide text that is too long." if slides.any? { |slide| slide.length > 180 }
 
-        { "title" => title, "caption" => caption.presence || title, "slides" => slides }
+        { "title" => title, "caption" => caption, "slides" => slides }
       rescue JSON::ParserError, KeyError => error
         raise InvalidResponse, "Gemma returned invalid slideshow data: #{error.message}"
       end
