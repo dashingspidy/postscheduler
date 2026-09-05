@@ -48,8 +48,9 @@ env:
     # One queue process/thread keeps slide rendering from exhausting a 512 MB VPS.
     JOB_CONCURRENCY: 1
 
-    # One Puma process avoids duplicating the Rails application in memory.
-    WEB_CONCURRENCY: 1
+    # Run Puma in single mode; WEB_CONCURRENCY=1 would add a master process
+    # and one worker, increasing memory usage on a 512 MB VPS.
+    WEB_CONCURRENCY: 0
     RAILS_MAX_THREADS: 2
 
     # Match this to any external database server to configure Active Record correctly
