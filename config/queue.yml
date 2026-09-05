@@ -7,7 +7,7 @@ default: &default
       # Keep rendering jobs sequential: Pillow can briefly use significant RAM.
       threads: 1
       processes: <%= ENV.fetch("JOB_CONCURRENCY", 1) %>
-      polling_interval: 0.1
+      polling_interval: 1
 
 development:
   <<: *default
