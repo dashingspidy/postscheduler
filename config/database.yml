@@ -33,10 +33,6 @@ production:
   queue:
     <<: *default
     database: storage/production_queue.sqlite3
-    # Solid Queue has its own pool, separate from Puma's application pool.
-    # Keep enough connections for the queue worker even if an older queue
-    # configuration is present during a rolling deployment.
-    max_connections: 3
     migrations_paths: db/queue_migrate
   cable:
     <<: *default

@@ -4,10 +4,9 @@ default: &default
       batch_size: 500
   workers:
     - queues: "*"
-      # Keep rendering jobs sequential: Pillow can briefly use significant RAM.
-      threads: 1
+      threads: 3
       processes: <%= ENV.fetch("JOB_CONCURRENCY", 1) %>
-      polling_interval: 1
+      polling_interval: 0.1
 
 development:
   <<: *default
