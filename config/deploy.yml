@@ -7,7 +7,7 @@ image: postscheduler
 # Deploy to these servers.
 servers:
   web:
-    - 3.70.156.25
+    - 3.77.55.165
   # job:
   #   hosts:
   #     - 192.168.0.1
