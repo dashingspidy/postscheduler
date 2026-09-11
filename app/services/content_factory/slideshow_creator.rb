@@ -2,7 +2,7 @@ module ContentFactory
   class SlideshowCreator
     class Error < StandardError; end
 
-    DRAFT_BATCH_SIZE = 2
+    DRAFT_BATCH_SIZE = 1
     DRAFT_BATCH_INTERVAL = 1.hour
 
     ANGLES_BY_PILLAR = {
